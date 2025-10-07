@@ -5,13 +5,11 @@ library(ggplot2) # Nice heatmaps
 # Leemos el csv
 # Reemplazar por su propio path
 file_path <- "/home/cisco/Documents/Studies/uni-courses/FDS/positron/tb1-fds/hotel_bookings.csv"
-
-bookings_df <- read.csv(file_path, header = TRUE, stringsAsFactors = FALSE)
+bookings_df <-  read.csv(file_path, header = TRUE, stringsAsFactors = FALSE)
 
 # Resumen de estadisticas basicas
 summary(bookings_df)
 head(bookings_df)
-
 
 # Identificacion de datos faltantes
 # Detectamos datos NAs (mas que ello parecen haber datos NULL o indefinidos)
@@ -55,3 +53,48 @@ bookings_df$is_corporate <- as.integer(!is.na(bookings_df$company))
 bookings_df$agent[is.na(bookings_df$agent)] <- 0
 bookings_df$company[is.na(bookings_df$company)] <- 0
 
+library(DescTools)
+library(tidyr)
+
+# Seleccionar columnas continuas relevantes, utilize unicamente estas ya que me parecian las que podian tener picos mas relevantes
+cols_outliers <- c("lead_time", "adr", "stays_in_week_nights",
+                   "stays_in_weekend_nights", "children", "babies")
+
+# Boxplots antes del tratamiento
+bookings_df %>%
+  select(all_of(cols_outliers)) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "valor") %>%
+  ggplot(aes(x = variable, y = valor)) +
+  geom_boxplot(fill = "skyblue") +
+  theme_minimal() +
+  labs(title = "Boxplots antes del tratamiento de outliers")
+
+# Aplicar winsorización (5% - 95%), saque esta funcion de google, no entiendo muy bien la winsorizacion
+bookings_df_wins <- bookings_df
+for (col in cols_outliers) {
+  bookings_df_wins[[col]] <- DescTools::Winsorize(bookings_df[[col]], val = quantile(bookings_df[[col]], probs = c(0.05, 0.95), na.rm = TRUE))
+}
+
+# Boxplots después del tratamiento
+bookings_df_wins %>%
+  select(all_of(cols_outliers)) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "valor") %>%
+  ggplot(aes(x = variable, y = valor)) +
+  geom_boxplot(fill = "lightgreen") +
+  theme_minimal() +
+  labs(title = "Boxplots después del tratamiento (Winsorización 5%-95%)")
+
+# Comparar resumen estadístico
+summary_before <- summary(bookings_df[cols_outliers])
+summary_after <- summary(bookings_df_wins[cols_outliers])
+
+cat("\nResumen antes del tratamiento:\n")
+print(summary_before)
+
+cat("\nResumen después del tratamiento:\n")
+print(summary_after)
+
+# Guardar el nuevo dataset
+write.csv(bookings_df_wins, "/home/cisco/Documents/Studies/uni-courses/FDS/positron/tb1-fds/hotel_bookings_winsorized.csv", row.names = FALSE)
+
+cat("\n Dataset con outliers tratados guardado exitosamente como 'hotel_bookings_winsorized.csv'\n")
