@@ -54,12 +54,31 @@ bookings_df$is_corporate <- as.integer(!is.na(bookings_df$company))
 bookings_df$agent[is.na(bookings_df$agent)] <- 0
 bookings_df$company[is.na(bookings_df$company)] <- 0
 
+# Conversion de tipos de datos segun sea necesario para asegurarnso de que se puedan utilizar luego en el analisis
+
+bookings_df$hotel <- as.factor(bookings_df$hotel)
+bookings_df$arrival_date_month <- factor(bookings_df$arrival_date_month, levels = month.name)
+bookings_df$meal <- as.factor(bookings_df$meal)
+bookings_df$country <- as.factor(bookings_df$country)
+bookings_df$market_segment <- as.factor(bookings_df$market_segment)
+bookings_df$distribution_channel <- as.factor(bookings_df$distribution_channel)
+bookings_df$reserved_room_type <- as.factor(bookings_df$reserved_room_type)
+bookings_df$assigned_room_type <- as.factor(bookings_df$assigned_room_type)
+bookings_df$deposit_type <- as.factor(bookings_df$deposit_type)
+bookings_df$customer_type <- as.factor(bookings_df$customer_type)
+bookings_df$reservation_status <- as.factor(bookings_df$reservation_status)
+bookings_df$reservation_status_date <- as.Date(bookings_df$reservation_status_date)
+
 library(DescTools)
 library(tidyr)
 
+# Tratamiento de los outliers discretos para 'babies' y 'children'
+bookings_df$children[bookings_df$children > 5] <- NA
+bookings_df$babies[bookings_df$babies > 3] <- NA
+
 # Seleccionar columnas continuas relevantes, utilize unicamente estas ya que me parecian las que podian tener picos mas relevantes
 cols_outliers <- c("lead_time", "adr", "stays_in_week_nights",
-                   "stays_in_weekend_nights", "children", "babies")
+                   "stays_in_weekend_nights")
 
 # Boxplots antes del tratamiento
 bookings_df %>%
